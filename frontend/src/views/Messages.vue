@@ -41,51 +41,37 @@
         <el-main class="main-content">
           <div class="page-header">
             <h2 class="page-title">消息中心</h2>
-            <div class="header-actions">
-              <el-button type="default" @click="markAllRead">
-                全部已读
-              </el-button>
-              <el-button type="danger" @click="deleteSelected">
-                删除选中
-              </el-button>
-            </div>
           </div>
           
           <div class="tabs">
-            <el-tabs v-model="activeTab" @tab-click="handleTabClick">
+            <el-tabs v-model="activeTab">
               <el-tab-pane label="全部" name="all">
-                <div class="message-filters">
-                  <el-tag 
-                    v-for="filter in filters" 
-                    :key="filter.value"
-                    :class="['filter-tag', { active: currentFilter === filter.value }]"
-                    @click="currentFilter = filter.value"
-                  >
-                    {{ filter.label }}
-                    <span v-if="filter.count > 0" class="tag-count">{{ filter.count }}</span>
-                  </el-tag>
+                <div class="message-list">
+                  <el-card v-for="msg in messages" :key="msg.id" class="message-card">
+                    <div class="message-header">
+                      <div class="msg-icon" :class="msg.type">
+                        <i :class="getIcon(msg.type)"></i>
+                      </div>
+                      <div class="msg-info">
+                        <div class="msg-title">{{ msg.title }}</div>
+                        <div class="msg-time">{{ formatTime(msg.time) }}</div>
+                      </div>
+                    </div>
+                    <p class="msg-content">{{ msg.content }}</p>
+                  </el-card>
                 </div>
               </el-tab-pane>
               <el-tab-pane label="未读" name="unread">
                 <div class="message-list">
-                  <el-card 
-                    v-for="msg in unreadMessages" 
-                    :key="msg.id" 
-                    :class="['message-card', { selected: selectedIds.includes(msg.id) }]"
-                    @click="toggleSelect(msg.id)"
-                  >
+                  <el-card v-for="msg in messages.filter(m => !m.read)" :key="msg.id" class="message-card">
                     <div class="message-header">
-                      <div class="msg-checkbox">
-                        <el-checkbox v-model="selectedIds" :label="msg.id" />
-                      </div>
                       <div class="msg-icon" :class="msg.type">
-                        <i :class="msg.icon"></i>
+                        <i :class="getIcon(msg.type)"></i>
                       </div>
                       <div class="msg-info">
                         <div class="msg-title">{{ msg.title }}</div>
-                        <div class="msg-time">{{ msg.time }}</div>
+                        <div class="msg-time">{{ formatTime(msg.time) }}</div>
                       </div>
-                      <span class="unread-dot"></span>
                     </div>
                     <p class="msg-content">{{ msg.content }}</p>
                   </el-card>
@@ -93,24 +79,15 @@
               </el-tab-pane>
               <el-tab-pane label="系统通知" name="system">
                 <div class="message-list">
-                  <el-card 
-                    v-for="msg in systemMessages" 
-                    :key="msg.id" 
-                    :class="['message-card', { selected: selectedIds.includes(msg.id), read: msg.read }]"
-                    @click="toggleSelect(msg.id)"
-                  >
+                  <el-card v-for="msg in messages.filter(m => m.type === 'system')" :key="msg.id" class="message-card">
                     <div class="message-header">
-                      <div class="msg-checkbox">
-                        <el-checkbox v-model="selectedIds" :label="msg.id" />
-                      </div>
                       <div class="msg-icon system">
                         <i class="el-icon-bell"></i>
                       </div>
                       <div class="msg-info">
                         <div class="msg-title">{{ msg.title }}</div>
-                        <div class="msg-time">{{ msg.time }}</div>
+                        <div class="msg-time">{{ formatTime(msg.time) }}</div>
                       </div>
-                      <span v-if="!msg.read" class="unread-dot"></span>
                     </div>
                     <p class="msg-content">{{ msg.content }}</p>
                   </el-card>
@@ -118,24 +95,15 @@
               </el-tab-pane>
               <el-tab-pane label="活动通知" name="activity">
                 <div class="message-list">
-                  <el-card 
-                    v-for="msg in activityMessages" 
-                    :key="msg.id" 
-                    :class="['message-card', { selected: selectedIds.includes(msg.id), read: msg.read }]"
-                    @click="toggleSelect(msg.id)"
-                  >
+                  <el-card v-for="msg in messages.filter(m => m.type === 'activity')" :key="msg.id" class="message-card">
                     <div class="message-header">
-                      <div class="msg-checkbox">
-                        <el-checkbox v-model="selectedIds" :label="msg.id" />
-                      </div>
                       <div class="msg-icon activity">
                         <i class="el-icon-calendar"></i>
                       </div>
                       <div class="msg-info">
                         <div class="msg-title">{{ msg.title }}</div>
-                        <div class="msg-time">{{ msg.time }}</div>
+                        <div class="msg-time">{{ formatTime(msg.time) }}</div>
                       </div>
-                      <span v-if="!msg.read" class="unread-dot"></span>
                     </div>
                     <p class="msg-content">{{ msg.content }}</p>
                   </el-card>
@@ -150,74 +118,65 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, computed, onMounted } from 'vue'
 import { getUser, logout } from '@/utils/auth'
 
 const user = ref(getUser())
 const activeMenu = ref('/messages')
 const activeTab = ref('all')
-const currentFilter = ref('all')
-const selectedIds = ref([])
 
 const messages = ref([
   {
     id: 1,
-    title: '新活动通知',
-    content: '【爱心家园】社区帮扶活动将于本周末举行，请志愿者们积极报名参加。',
-    time: '5分钟前',
-    type: 'activity',
-    icon: 'el-icon-calendar',
-    read: false
+    title: '欢迎加入青志汇',
+    content: '感谢您注册成为志愿者，期待您的参与！',
+    type: 'system',
+    read: true,
+    time: '2024-01-15 10:00:00'
   },
   {
     id: 2,
-    title: '系统维护通知',
-    content: '系统将于今晚22:00-24:00进行维护升级，请提前保存数据。',
-    time: '1小时前',
-    type: 'system',
-    icon: 'el-icon-bell',
-    read: false
+    title: '新活动上线：校园环保行动',
+    content: '本周六我们将组织校园环保清洁活动，欢迎大家报名参加！',
+    type: 'activity',
+    read: false,
+    time: '2024-01-14 15:30:00'
   },
   {
     id: 3,
-    title: '值班安排更新',
-    content: '您本周三的值班时间已调整为下午14:00-16:00，请留意查看。',
-    time: '3小时前',
-    type: 'activity',
-    icon: 'el-icon-clock',
-    read: true
-  },
-  {
-    id: 4,
-    title: '服务队会议',
-    content: '本周六上午9点将召开服务队全体会议，请准时参加。',
-    time: '昨天',
-    type: 'system',
-    icon: 'el-icon-user',
-    read: true
-  },
-  {
-    id: 5,
-    title: '活动报名成功',
-    content: '您已成功报名参加"校园环保志愿行"活动，请准时参加。',
-    time: '昨天',
-    type: 'activity',
-    icon: 'el-icon-check',
-    read: false
+    title: '值班提醒',
+    content: '请本周值班志愿者准时到岗，谢谢配合！',
+    type: 'duty',
+    read: true,
+    time: '2024-01-13 09:00:00'
   }
 ])
 
-const filters = computed(() => [
-  { label: '全部', value: 'all', count: messages.value.length },
-  { label: '未读', value: 'unread', count: messages.value.filter(m => !m.read).length },
-  { label: '系统通知', value: 'system', count: messages.value.filter(m => m.type === 'system').length },
-  { label: '活动通知', value: 'activity', count: messages.value.filter(m => m.type === 'activity').length }
-])
+const getIcon = (type) => {
+  const icons = {
+    'system': 'el-icon-bell',
+    'activity': 'el-icon-calendar',
+    'duty': 'el-icon-clock',
+    'team': 'el-icon-users'
+  }
+  return icons[type] || 'el-icon-info'
+}
 
-const unreadMessages = computed(() => messages.value.filter(m => !m.read))
-const systemMessages = computed(() => messages.value.filter(m => m.type === 'system'))
-const activityMessages = computed(() => messages.value.filter(m => m.type === 'activity'))
+const formatTime = (dateStr) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diff = now.getTime() - date.getTime()
+  const minutes = Math.floor(diff / 60000)
+  const hours = Math.floor(diff / 3600000)
+  const days = Math.floor(diff / 86400000)
+  
+  if (minutes < 1) return '刚刚'
+  if (minutes < 60) return `${minutes}分钟前`
+  if (hours < 24) return `${hours}小时前`
+  if (days < 7) return `${days}天前`
+  return date.toLocaleDateString('zh-CN')
+}
 
 const handleLogout = () => {
   logout()
@@ -225,38 +184,6 @@ const handleLogout = () => {
 
 const navigateTo = (path) => {
   window.location.href = path
-}
-
-const handleTabClick = () => {
-  selectedIds.value = []
-}
-
-const toggleSelect = (id) => {
-  const index = selectedIds.value.indexOf(id)
-  if (index > -1) {
-    selectedIds.value.splice(index, 1)
-  } else {
-    selectedIds.value.push(id)
-  }
-  const msg = messages.value.find(m => m.id === id)
-  if (msg && !msg.read) {
-    msg.read = true
-  }
-}
-
-const markAllRead = () => {
-  messages.value.forEach(msg => msg.read = true)
-  ElMessage.success('已全部标记为已读')
-}
-
-const deleteSelected = () => {
-  if (selectedIds.value.length === 0) {
-    ElMessage.warning('请先选择要删除的消息')
-    return
-  }
-  messages.value = messages.value.filter(m => !selectedIds.value.includes(m.id))
-  selectedIds.value = []
-  ElMessage.success('删除成功')
 }
 </script>
 
@@ -320,49 +247,10 @@ const deleteSelected = () => {
   color: #333;
 }
 
-.header-actions {
-  display: flex;
-  gap: 12px;
-}
-
 .tabs {
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-.message-filters {
-  display: flex;
-  gap: 12px;
-  padding: 16px;
-  flex-wrap: wrap;
-}
-
-.filter-tag {
-  padding: 6px 16px;
-  border-radius: 20px;
-  background: #f5f5f5;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.filter-tag.active {
-  background: #DC143C;
-  color: #fff;
-}
-
-.tag-count {
-  margin-left: 8px;
-  background: #fff;
-  color: #DC143C;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 12px;
-}
-
-.filter-tag.active .tag-count {
-  background: rgba(255, 255, 255, 0.3);
-  color: #fff;
 }
 
 .message-list {
@@ -371,20 +259,6 @@ const deleteSelected = () => {
 
 .message-card {
   margin-bottom: 12px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.message-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.message-card.selected {
-  border: 2px solid #DC143C;
-}
-
-.message-card.read {
-  opacity: 0.7;
 }
 
 .message-header {
@@ -392,10 +266,6 @@ const deleteSelected = () => {
   align-items: center;
   gap: 12px;
   margin-bottom: 8px;
-}
-
-.msg-checkbox {
-  flex-shrink: 0;
 }
 
 .msg-icon {
@@ -417,7 +287,11 @@ const deleteSelected = () => {
   background: linear-gradient(135deg, #67c23a 0%, #85ce61 100%);
 }
 
-.msg-icon.default {
+.msg-icon.duty {
+  background: linear-gradient(135deg, #e6a23c 0%, #f0c78a 100%);
+}
+
+.msg-icon.team {
   background: linear-gradient(135deg, #dc143c 0%, #ff6b6b 100%);
 }
 
@@ -436,13 +310,6 @@ const deleteSelected = () => {
   color: #999;
 }
 
-.unread-dot {
-  width: 8px;
-  height: 8px;
-  background: #DC143C;
-  border-radius: 50%;
-}
-
 .msg-content {
   color: #666;
   font-size: 14px;
@@ -454,11 +321,6 @@ const deleteSelected = () => {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
-  }
-  
-  .header-actions {
-    width: 100%;
-    justify-content: space-between;
   }
 }
 </style>
