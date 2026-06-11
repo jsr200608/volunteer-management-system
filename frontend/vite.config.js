@@ -5,6 +5,7 @@ import { resolve } from 'path'
 
 export default defineConfig({
   plugins: [vue()],
+  base: '/volunteer-management-system/',
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src')
