@@ -1,0 +1,1964 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>青志汇 - 高校志愿者团学组织人员管理系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft YaHei', sans-serif; background: #f5f5f5; }
+        
+        /* 导航标签 - 开发调试用，正式可隐藏 */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            padding: 10px 20px;
+            background: white;
+            border-bottom: 2px solid #eee;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            color: #666;
+            font-weight: bold;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            background: none;
+            border: none;
+            font-size: 14px;
+        }
+        .tab.active { color: #DC143C; border-bottom-color: #DC143C; }
+        .tab:hover { color: #DC143C; }
+        
+        /* 登录页面 */
+        .login-container {
+            min-height: calc(100vh);
+            background: linear-gradient(135deg, #DC143C 0%, #FF4444 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .login-box {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .logo { width: 80px; height: 80px; background: linear-gradient(135deg, #DC143C, #FF6B6B); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 20px; }
+        .logo-icon { font-size: 40px; color: white; }
+        .title { font-size: 28px; font-weight: bold; color: #DC143C; margin-bottom: 8px; text-align: center; }
+        .subtitle { font-size: 14px; color: #999; text-align: center; }
+        .form-item { margin-bottom: 20px; }
+        .form-item label { display: block; margin-bottom: 8px; color: #333; font-weight: bold; }
+        .form-item input, .form-item select { width: 100%; padding: 12px 16px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+        .form-item input:focus, .form-item select:focus { outline: none; border-color: #DC143C; }
+        .btn-primary { width: 100%; padding: 12px; background: linear-gradient(135deg, #DC143C, #FF4444); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .btn-primary:hover { box-shadow: 0 4px 12px rgba(220,20,60,0.4); }
+        .login-error { color: #f56c6c; font-size: 12px; margin-top: 8px; text-align: center; display: none; }
+        .login-tip { font-size: 12px; color: #999; text-align: center; margin-top: 16px; }
+        .login-tip span { color: #DC143C; cursor: pointer; }
+        
+        /* 主页面布局 */
+        .dashboard { display: flex; flex-direction: column; min-height: 100vh; }
+        .header { background: #DC143C; color: white; padding: 0 20px; height: 60px; display: flex; justify-content: space-between; align-items: center; }
+        .header .logo-text { font-size: 20px; font-weight: bold; }
+        .header-right { display: flex; align-items: center; gap: 16px; }
+        .user-info { display: flex; align-items: center; gap: 8px; }
+        .logout-btn { padding: 6px 16px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; color: white; cursor: pointer; font-size: 14px; }
+        .logout-btn:hover { background: rgba(255,255,255,0.3); }
+        .main-content { display: flex; flex: 1; }
+        .sidebar { width: 200px; background: white; border-right: 1px solid #eee; padding: 20px 0; }
+        .menu-item { padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px; color: #666; transition: background-color 0.2s; }
+        .menu-item:hover, .menu-item.active { background: rgba(220,20,60,0.1); color: #DC143C; }
+        .content-area { flex: 1; padding: 20px; background: #f5f5f5; }
+        
+        /* 统计卡片 */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 20px; }
+        .stat-card { background: white; border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .stat-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 24px; color: white; }
+        .stat-icon.members { background: linear-gradient(135deg, #DC143C, #FF6B6B); }
+        .stat-icon.activity { background: linear-gradient(135deg, #67c23a, #85ce61); }
+        .stat-icon.duty { background: linear-gradient(135deg, #e6a23c, #f0c78a); }
+        .stat-icon.hours { background: linear-gradient(135deg, #409eff, #67b8ff); }
+        .stat-value { font-size: 28px; font-weight: bold; color: #333; }
+        .stat-label { font-size: 14px; color: #999; }
+        
+        /* 快捷入口 */
+        .quick-actions { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .section-title { font-size: 16px; font-weight: bold; color: #333; margin-bottom: 16px; }
+        .action-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .action-btn { padding: 14px; background: linear-gradient(135deg, #DC143C, #FF4444); color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(220,20,60,0.3); }
+        
+        /* 欢迎卡片 */
+        .welcome-card { background: white; border-radius: 12px; padding: 24px; }
+        .welcome-card h2 { color: #DC143C; margin-bottom: 8px; }
+        .welcome-card p { color: #666; margin-bottom: 16px; }
+        .quote { background: #FFF5F5; border-left: 4px solid #DC143C; padding: 12px 16px; border-radius: 0 8px 8px 0; }
+        .quote span { font-style: italic; color: #666; font-size: 14px; }
+        
+        /* 页面标题 */
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .page-title { font-size: 20px; font-weight: bold; color: #333; }
+        
+        /* 搜索栏 */
+        .search-bar { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+        .search-input { padding: 10px 16px; border: 1px solid #ddd; border-radius: 8px; width: 300px; }
+        .search-input:focus { outline: none; border-color: #DC143C; }
+        .filter-select { padding: 10px 16px; border: 1px solid #ddd; border-radius: 8px; background: white; }
+        
+        /* 表格 */
+        .member-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
+        .member-table th, .member-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #eee; }
+        .member-table th { background: #f8f9fa; font-weight: bold; color: #333; }
+        .tag { padding: 4px 12px; border-radius: 4px; font-size: 12px; }
+        .tag.success { background: #e8f5e9; color: #2e7d32; }
+        .tag.warning { background: #fff8e1; color: #f57c00; }
+        .tag.info { background: #e3f2fd; color: #1565c0; }
+        .btn-sm { padding: 6px 12px; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; margin-right: 8px; }
+        .btn-sm.primary { background: #DC143C; color: white; }
+        .btn-sm.danger { background: #f56c6c; color: white; }
+        .btn-sm.warning { background: #e6a23c; color: white; }
+        
+        /* 服务队卡片 */
+        .teams-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        .team-card { background: white; border-radius: 12px; padding: 24px; text-align: center; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .team-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+        .team-icon { width: 80px; height: 80px; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 16px; font-size: 32px; color: white; }
+        .team-icon.heart { background: linear-gradient(135deg, #DC143C, #FF6B6B); }
+        .team-icon.leaf { background: linear-gradient(135deg, #67c23a, #85ce61); }
+        .team-icon.culture { background: linear-gradient(135deg, #e6a23c, #f0c78a); }
+        .team-icon.shield { background: linear-gradient(135deg, #409eff, #67b8ff); }
+        .team-name { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 8px; }
+        .team-desc { font-size: 14px; color: #666; margin-bottom: 16px; line-height: 1.5; }
+        
+        /* 活动卡片 */
+        .activities-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .activity-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .activity-header { display: flex; justify-content: space-between align-items: center; margin-bottom: 12px; }
+        .activity-title { font-size: 16px; font-weight: bold; color: #333; }
+        .status-tag { padding: 4px 12px; border-radius: 20px; font-size: 12px; }
+        .status-tag.active { background: #E8F5E9; color: #2E7D32; }
+        .status-tag.ended { background: #F5F5F5; color: #9E9E9E; }
+        .activity-info { display: flex; gap: 20px; margin-bottom: 12px; flex-wrap: wrap; }
+        .info-item { display: flex; align-items: center; gap: 4px; font-size: 14px; color: #666; }
+        .activity-description { color: #666; font-size: 14px; line-height: 1.6; margin-bottom: 16px; }
+        .activity-footer { display: flex; justify-content: flex-end; }
+        
+        /* 值班日历 */
+        .week-nav { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; }
+        .week-label { font-size: 16px; font-weight: bold; color: #333; }
+        .duty-calendar { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 20px; }
+        .calendar-header { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 16px; }
+        .day-header { text-align: center; padding: 12px; border-radius: 8px; cursor: pointer; transition: all 0.3s; }
+        .day-header:hover { background: #FFF5F5; }
+        .day-header.today { background: #DC143C; color: white; }
+        .day-name { font-size: 12px; margin-bottom: 4px; }
+        .day-date { font-size: 18px; font-weight: bold; }
+        .duty-list-section { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        
+        /* 消息卡片 */
+        .message-filters { display: flex; gap: 12px; padding: 16px; flex-wrap: wrap; }
+        .filter-tag { padding: 6px 16px; border-radius: 20px; background: #f5f5f5; cursor: pointer; transition: all 0.3s; }
+        .filter-tag.active { background: #DC143C; color: white; }
+        .message-list { padding: 16px; }
+        .message-card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 12px; cursor: pointer; transition: all 0.3s; border: 1px solid #eee; }
+        .message-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .message-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+        .msg-icon { width: 40px; height: 40px; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 20px; color: white; }
+        .msg-icon.system { background: linear-gradient(135deg, #409eff, #67b8ff); }
+        .msg-icon.activity { background: linear-gradient(135deg, #67c23a, #85ce61); }
+        .msg-title { font-weight: bold; color: #333; margin-bottom: 4px; }
+        .msg-time { font-size: 12px; color: #999; }
+        .unread-dot { width: 8px; height: 8px; background: #DC143C; border-radius: 50%; }
+        .msg-content { color: #666; font-size: 14px; line-height: 1.5; }
+        
+        /* 响应式 */
+        @media (max-width: 1200px) {
+            .stats-grid, .action-grid, .teams-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .stats-grid, .action-grid, .teams-grid, .activities-list { grid-template-columns: 1fr; }
+            .sidebar { display: none; }
+            .search-input { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航标签 - 开发调试用 -->
+    <div class="tabs" id="debugTabs" style="display:none;">
+        <button class="tab" onclick="showPage('login')">登录页面</button>
+        <button class="tab" onclick="showPage('dashboard')">首页仪表盘</button>
+        <button class="tab" onclick="showPage('members')">成员管理</button>
+        <button class="tab" onclick="showPage('teams')">服务队</button>
+        <button class="tab" onclick="showPage('activities')">活动报名</button>
+        <button class="tab" onclick="showPage('duty')">值班安排</button>
+        <button class="tab" onclick="showPage('messages')">消息中心</button>
+        <button class="tab" onclick="showPage('users')">用户管理</button>
+    </div>
+
+    <!-- 登录页面 -->
+    <div id="login" class="page-content">
+        <div class="login-container">
+            <div class="login-box">
+                <div class="logo"><span class="logo-icon">❤</span></div>
+                <h1 class="title">青志汇</h1>
+                <p class="subtitle">高校志愿者团学组织人员管理系统</p>
+                <div class="form-item" style="margin-top: 30px;">
+                    <label>学号</label>
+                    <input type="text" id="loginUsername" placeholder="请输入学号" value="admin">
+                </div>
+                <div class="form-item">
+                    <label>密码</label>
+                    <input type="password" id="loginPassword" placeholder="请输入密码" value="admin123">
+                </div>
+                <div id="loginError" class="login-error">学号或密码错误</div>
+                <button class="btn-primary" onclick="handleLogin()">登录</button>
+                <p class="login-tip">管理员账号: admin / admin123<br>普通用户: user1 / user123</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 首页仪表盘 -->
+    <div id="dashboard" class="page-content" style="display: none;">
+        <div class="dashboard">
+            <div class="header">
+                <div class="logo-text">青志汇</div>
+                <div class="header-right">
+                    <div class="user-info">
+                        <span id="currentUserName">管理员</span>
+                        <span class="tag info" id="currentUserRole">管理员</span>
+                    </div>
+                    <button class="logout-btn" onclick="handleLogout()">退出登录</button>
+                </div>
+            </div>
+            <div class="main-content">
+                <div class="sidebar" id="sidebarMenu">
+                    <!-- 侧边栏菜单由JS根据角色动态生成 -->
+                </div>
+                <div class="content-area">
+                    <div class="stats-grid" id="adminStats">
+                        <div class="stat-card"><div class="stat-icon members">👥</div><div><div class="stat-value">156</div><div class="stat-label">总成员数</div></div></div>
+                        <div class="stat-card"><div class="stat-icon activity">📅</div><div><div class="stat-value">8</div><div class="stat-label">今日活动</div></div></div>
+                        <div class="stat-card"><div class="stat-icon duty">⏰</div><div><div class="stat-value">12</div><div class="stat-label">今日值班</div></div></div>
+                        <div class="stat-card"><div class="stat-icon hours">⏱️</div><div><div class="stat-value">2,345</div><div class="stat-label">总志愿时长</div></div></div>
+                    </div>
+                    <div class="stats-grid" id="userStats" style="display:none;">
+                        <div class="stat-card"><div class="stat-icon activity">📅</div><div><div class="stat-value">8</div><div class="stat-label">可参加活动</div></div></div>
+                        <div class="stat-card"><div class="stat-icon duty">⏰</div><div><div class="stat-value">2</div><div class="stat-label">我的值班</div></div></div>
+                        <div class="stat-card"><div class="stat-icon hours">⏱️</div><div><div class="stat-value">45.5</div><div class="stat-label">我的志愿时长</div></div></div>
+                        <div class="stat-card"><div class="stat-icon members">🏆</div><div><div class="stat-value">3</div><div class="stat-label">已参加活动</div></div></div>
+                    </div>
+                    <div class="quick-actions" id="adminQuickActions">
+                        <div class="section-title">快捷入口</div>
+                        <div class="action-grid">
+                            <button class="action-btn" onclick="showPage('members')">👥 成员管理</button>
+                            <button class="action-btn" onclick="showPage('activities')">📅 活动报名</button>
+                            <button class="action-btn" onclick="showPage('duty')">⏰ 值班安排</button>
+                            <button class="action-btn" onclick="showPage('messages')">🔔 消息中心</button>
+                        </div>
+                    </div>
+                    <div class="quick-actions" id="userQuickActions" style="display:none;">
+                        <div class="section-title">快捷入口</div>
+                        <div class="action-grid">
+                            <button class="action-btn" onclick="showPage('activities')">📅 活动报名</button>
+                            <button class="action-btn" onclick="showPage('duty')">⏰ 我的值班</button>
+                            <button class="action-btn" onclick="showPage('messages')">🔔 消息中心</button>
+                        </div>
+                    </div>
+                    <div class="welcome-card">
+                        <h2>🎉 欢迎回来，<span id="welcomeUserName">用户</span>！</h2>
+                        <p>今天是2026年6月10日，让我们一起传递温暖，奉献爱心！</p>
+                        <div class="quote"><span>"奉献是用爱心铸成的一道彩虹，五颜六色，清新飘逸，带给人们温馨与快乐。"</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 成员管理 -->
+    <div id="members" class="page-content" style="display: none;">
+        <div class="dashboard">
+            <div class="header"><div class="logo-text">青志汇</div><div>管理员</div></div>
+            <div class="main-content">
+                <div class="sidebar">
+                    <div class="menu-item" onclick="showPage('dashboard')">🏠 首页</div>
+                    <div class="menu-item active">👥 成员管理</div>
+                    <div class="menu-item" onclick="showPage('teams')">👨‍👩‍👧‍👦 服务队</div>
+                    <div class="menu-item" onclick="showPage('activities')">📅 活动报名</div>
+                    <div class="menu-item" onclick="showPage('duty')">⏰ 值班安排</div>
+                    <div class="menu-item" onclick="showPage('messages')">🔔 消息中心</div>
+                </div>
+                <div class="content-area">
+                    <div class="page-header">
+                        <h2 class="page-title">成员管理</h2>
+                        <button class="btn-primary" style="width:auto;padding:10px 20px;" onclick="openAddMemberModal()">+ 添加成员</button>
+                    </div>
+                    <div class="search-bar">
+                        <input type="text" class="search-input" placeholder="搜索成员姓名/学号" id="memberSearchInput">
+                        <select class="filter-select"><option>全部服务队</option><option>爱心家园</option><option>绿色环保</option><option>文化之旅</option><option>安全使者</option></select>
+                        <select class="filter-select"><option>全部状态</option><option>正常</option><option>禁用</option></select>
+                        <button class="btn-primary" style="width:auto;padding:10px 20px;" onclick="searchMembers()">搜索</button>
+                    </div>
+                    <table class="member-table" id="memberTable">
+                        <thead><tr><th>姓名</th><th>学号</th><th>服务队</th><th>志愿时长</th><th>状态</th><th>操作</th></tr></thead>
+                        <tbody id="memberTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 添加成员弹窗 -->
+    <div id="addMemberModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;justify-content:center;align-items:center;">
+        <div style="background:white;border-radius:12px;padding:30px;width:90%;max-width:500px;max-height:90vh;overflow-y:auto;">
+            <h2 style="margin-bottom:20px;color:#333;">添加成员</h2>
+            <form id="addMemberForm">
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;margin-bottom:8px;font-weight:bold;color:#333;">姓名 <span style="color:red;">*</span></label>
+                    <input type="text" id="memberName" required style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;margin-bottom:8px;font-weight:bold;color:#333;">学号 <span style="color:red;">*</span></label>
+                    <input type="text" id="memberStudentId" required style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;margin-bottom:8px;font-weight:bold;color:#333;">服务队 <span style="color:red;">*</span></label>
+                    <select id="memberTeam" required style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                        <option value="">请选择服务队</option>
+                        <option value="爱心家园">爱心家园服务队</option>
+                        <option value="绿色环保">绿色环保服务队</option>
+                        <option value="文化之旅">文化之旅服务队</option>
+                        <option value="安全使者">安全使者服务队</option>
+                    </select>
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;margin-bottom:8px;font-weight:bold;color:#333;">性别</label>
+                    <select id="memberGender" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                        <option value="">请选择</option>
+                        <option value="男">男</option>
+                        <option value="女">女</option>
+                    </select>
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;margin-bottom:8px;font-weight:bold;color:#333;">年级</label>
+                    <input type="text" id="memberGrade" placeholder="如：2023级" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;margin-bottom:8px;font-weight:bold;color:#333;">学院</label>
+                    <input type="text" id="memberCollege" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;margin-bottom:8px;font-weight:bold;color:#333;">专业</label>
+                    <input type="text" id="memberMajor" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;margin-bottom:8px;font-weight:bold;color:#333;">手机号</label>
+                    <input type="tel" id="memberPhone" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;margin-bottom:8px;font-weight:bold;color:#333;">邮箱</label>
+                    <input type="email" id="memberEmail" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                </div>
+                <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:24px;">
+                    <button type="button" onclick="closeAddMemberModal()" style="padding:10px 20px;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">取消</button>
+                    <button type="submit" style="padding:10px 20px;border:none;border-radius:8px;background:linear-gradient(135deg, #DC143C, #FF4444);color:white;cursor:pointer;">添加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 服务队 -->
+    <div id="teams" class="page-content" style="display: none;">
+        <div class="dashboard">
+            <div class="header"><div class="logo-text">青志汇</div><div>管理员</div></div>
+            <div class="main-content">
+                <div class="sidebar">
+                    <div class="menu-item" onclick="showPage('dashboard')">🏠 首页</div>
+                    <div class="menu-item" onclick="showPage('members')">👥 成员管理</div>
+                    <div class="menu-item active">👨‍👩‍👧‍👦 服务队</div>
+                    <div class="menu-item" onclick="showPage('activities')">📅 活动报名</div>
+                    <div class="menu-item" onclick="showPage('duty')">⏰ 值班安排</div>
+                    <div class="menu-item" onclick="showPage('messages')">🔔 消息中心</div>
+                </div>
+                <div class="content-area">
+                    <div class="page-header"><h2 class="page-title">服务队管理</h2></div>
+                    <div class="teams-grid">
+                        <div class="team-card" id="teamCard爱心家园">
+                            <div class="team-icon heart">❤</div>
+                            <div class="team-name">爱心家园服务队</div>
+                            <div class="team-desc">关爱孤寡老人、留守儿童，传递温暖与爱心</div>
+                            <div id="teamCountDisplay爱心家园" style="color:#DC143C;font-weight:bold;">成员数量：公开</div>
+                            <div id="teamClickTip爱心家园" style="margin-top:12px;font-size:12px;color:#999;display:none;">点击查看成员 →</div>
+                        </div>
+                        <div class="team-card" id="teamCard绿色环保">
+                            <div class="team-icon leaf">🌿</div>
+                            <div class="team-name">绿色环保服务队</div>
+                            <div class="team-desc">环保宣传、垃圾分类、植树造林活动</div>
+                            <div id="teamCountDisplay绿色环保" style="color:#67c23a;font-weight:bold;">成员数量：公开</div>
+                            <div id="teamClickTip绿色环保" style="margin-top:12px;font-size:12px;color:#999;display:none;">点击查看成员 →</div>
+                        </div>
+                        <div class="team-card" id="teamCard文化之旅">
+                            <div class="team-icon culture">🏛️</div>
+                            <div class="team-name">文化之旅服务队</div>
+                            <div class="team-desc">文化传承、博物馆讲解、非遗推广</div>
+                            <div id="teamCountDisplay文化之旅" style="color:#e6a23c;font-weight:bold;">成员数量：公开</div>
+                            <div id="teamClickTip文化之旅" style="margin-top:12px;font-size:12px;color:#999;display:none;">点击查看成员 →</div>
+                        </div>
+                        <div class="team-card" id="teamCard安全使者">
+                            <div class="team-icon shield">🛡️</div>
+                            <div class="team-name">安全使者服务队</div>
+                            <div class="team-desc">安全宣传、交通引导、应急演练</div>
+                            <div id="teamCountDisplay安全使者" style="color:#409eff;font-weight:bold;">成员数量：公开</div>
+                            <div id="teamClickTip安全使者" style="margin-top:12px;font-size:12px;color:#999;display:none;">点击查看成员 →</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 服务队成员详情弹窗 -->
+    <div id="teamMembersModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;justify-content:center;align-items:center;">
+        <div style="background:white;border-radius:12px;padding:30px;width:90%;max-width:800px;max-height:90vh;overflow-y:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <div>
+                    <h2 id="teamModalTitle" style="margin:0;color:#333;">爱心家园服务队</h2>
+                    <p id="teamModalDesc" style="margin:8px 0 0 0;color:#666;font-size:14px;">关爱孤寡老人、留守儿童，传递温暖与爱心</p>
+                </div>
+                <button onclick="closeTeamMembersModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:#999;">×</button>
+            </div>
+            <div style="margin-bottom:16px;">
+                <input type="text" id="teamMemberSearch" placeholder="搜索成员姓名或学号" onkeyup="filterTeamMembers()" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+            </div>
+            <table class="member-table">
+                <thead><tr><th>姓名</th><th>学号</th><th>性别</th><th>年级</th><th>志愿时长</th><th>状态</th></tr></thead>
+                <tbody id="teamMembersTableBody"></tbody>
+            </table>
+            <div id="teamMemberCount" style="margin-top:16px;text-align:center;color:#666;font-size:14px;"></div>
+        </div>
+    </div>
+
+    <!-- 活动报名 -->
+    <div id="activities" class="page-content" style="display: none;">
+        <div class="dashboard">
+            <div class="header"><div class="logo-text">青志汇</div><div>管理员</div></div>
+            <div class="main-content">
+                <div class="sidebar">
+                    <div class="menu-item" onclick="showPage('dashboard')">🏠 首页</div>
+                    <div class="menu-item" onclick="showPage('members')">👥 成员管理</div>
+                    <div class="menu-item" onclick="showPage('teams')">👨‍👩‍👧‍👦 服务队</div>
+                    <div class="menu-item active">📅 活动报名</div>
+                    <div class="menu-item" onclick="showPage('duty')">⏰ 值班安排</div>
+                    <div class="menu-item" onclick="showPage('messages')">🔔 消息中心</div>
+                </div>
+                <div class="content-area">
+                    <div class="page-header">
+                        <h2 class="page-title">活动报名</h2>
+                    </div>
+                    <div class="search-bar">
+                        <input type="text" id="activitySearchInput" class="search-input" placeholder="搜索活动名称" onkeyup="filterActivities()">
+                        <select id="activityStatusFilter" class="filter-select" onchange="filterActivities()">
+                            <option value="">全部状态</option>
+                            <option value="报名中">报名中</option>
+                            <option value="已结束">已结束</option>
+                        </select>
+                    </div>
+                    <div id="activitiesList" class="activities-list">
+                        <!-- 活动列表由JS动态生成 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 活动详情/报名弹窗 -->
+    <div id="activityDetailModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;justify-content:center;align-items:center;">
+        <div style="background:white;border-radius:12px;padding:30px;width:90%;max-width:600px;max-height:90vh;overflow-y:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+                <div>
+                    <h2 id="activityModalTitle" style="margin:0;color:#333;">活动名称</h2>
+                    <span id="activityModalStatus" class="status-tag active" style="margin-top:8px;display:inline-block;">报名中</span>
+                </div>
+                <button onclick="closeActivityModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:#999;">×</button>
+            </div>
+            <div style="margin-bottom:20px;">
+                <div id="activityModalInfo" style="color:#666;font-size:14px;line-height:1.8;"></div>
+            </div>
+            <div style="border-top:1px solid #eee;padding-top:20px;">
+                <h3 style="margin:0 0 16px 0;color:#333;">报名信息</h3>
+                <form id="activitySignupForm">
+                    <div style="margin-bottom:16px;">
+                        <label style="display:block;margin-bottom:8px;font-weight:bold;color:#333;">姓名 <span style="color:red;">*</span></label>
+                        <input type="text" id="signupName" required style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                    </div>
+                    <div style="margin-bottom:16px;">
+                        <label style="display:block;margin-bottom:8px;font-weight:bold;color:#333;">学号 <span style="color:red;">*</span></label>
+                        <input type="text" id="signupStudentId" required style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                    </div>
+                    <div style="margin-bottom:16px;">
+                        <label style="display:block;margin-bottom:8px;font-weight:bold;color:#333;">手机号 <span style="color:red;">*</span></label>
+                        <input type="tel" id="signupPhone" required style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                    </div>
+                    <div style="margin-bottom:16px;">
+                        <label style="display:block;margin-bottom:8px;font-weight:bold;color:#333;">服务队</label>
+                        <select id="signupTeam" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                            <option value="">请选择服务队</option>
+                            <option value="爱心家园">爱心家园服务队</option>
+                            <option value="绿色环保">绿色环保服务队</option>
+                            <option value="文化之旅">文化之旅服务队</option>
+                            <option value="安全使者">安全使者服务队</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom:16px;">
+                        <label style="display:block;margin-bottom:8px;font-weight:bold;color:#333;">备注</label>
+                        <textarea id="signupRemark" rows="3" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;resize:vertical;" placeholder="如有特殊情况请在此说明"></textarea>
+                    </div>
+                    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:24px;">
+                        <button type="button" onclick="closeActivityModal()" style="padding:10px 20px;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">取消</button>
+                        <button type="submit" style="padding:10px 20px;border:none;border-radius:8px;background:linear-gradient(135deg, #DC143C, #FF4444);color:white;cursor:pointer;">确认报名</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 值班安排 -->
+    <div id="duty" class="page-content" style="display: none;">
+        <div class="dashboard">
+            <div class="header"><div class="logo-text">青志汇</div><div>管理员</div></div>
+            <div class="main-content">
+                <div class="sidebar">
+                    <div class="menu-item" onclick="showPage('dashboard')">🏠 首页</div>
+                    <div class="menu-item" onclick="showPage('members')">👥 成员管理</div>
+                    <div class="menu-item" onclick="showPage('teams')">👨‍👩‍👧‍👦 服务队</div>
+                    <div class="menu-item" onclick="showPage('activities')">📅 活动报名</div>
+                    <div class="menu-item active">⏰ 值班安排</div>
+                    <div class="menu-item" onclick="showPage('messages')">🔔 消息中心</div>
+                </div>
+                <div class="content-area">
+                    <div class="page-header" id="dutyPageHeader">
+                        <h2 class="page-title">值班安排</h2>
+                        <button id="addDutyBtn" class="btn-primary" style="width:auto;padding:10px 20px;" onclick="openAddDutyModal()">+ 安排值班</button>
+                    </div>
+                    <div class="week-nav">
+                        <button style="background:none;border:none;color:#DC143C;cursor:pointer;" onclick="changeWeek(-1)">← 上一周</button>
+                        <span id="weekLabel" class="week-label">2026-06-08 - 2026-06-14</span>
+                        <button style="background:none;border:none;color:#DC143C;cursor:pointer;" onclick="changeWeek(1)">下一周 →</button>
+                    </div>
+                    <div class="duty-calendar">
+                        <div class="calendar-header" id="calendarHeader">
+                            <div class="day-header"><div class="day-name">周一</div><div class="day-date">8</div></div>
+                            <div class="day-header"><div class="day-name">周二</div><div class="day-date">9</div></div>
+                            <div class="day-header today"><div class="day-name">周三</div><div class="day-date">10</div></div>
+                            <div class="day-header"><div class="day-name">周四</div><div class="day-date">11</div></div>
+                            <div class="day-header"><div class="day-name">周五</div><div class="day-date">12</div></div>
+                            <div class="day-header"><div class="day-name">周六</div><div class="day-date">13</div></div>
+                            <div class="day-header"><div class="day-name">周日</div><div class="day-date">14</div></div>
+                        </div>
+                    </div>
+                    <div class="duty-list-section">
+                        <h3 class="section-title">值班安排表</h3>
+                        <table class="member-table">
+                            <thead><tr><th>日期</th><th>时间段</th><th>值班人员</th><th>所属服务队</th><th>值班地点</th><th>操作</th></tr></thead>
+                            <tbody id="dutyTableBody">
+                                <!-- 由JS动态生成 -->
+                            </tbody>
+                        </table>
+                        <div id="dutyEmptyMsg" style="text-align:center;color:#999;padding:40px;display:none;">暂无值班安排，点击上方"+ 安排值班"添加</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 添加/编辑值班弹窗 -->
+    <div id="addDutyModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;justify-content:center;align-items:center;">
+        <div style="background:white;border-radius:12px;padding:30px;width:90%;max-width:500px;max-height:90vh;overflow-y:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <h2 id="dutyModalTitle" style="margin:0;color:#333;">安排值班</h2>
+                <button onclick="closeAddDutyModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:#999;">×</button>
+            </div>
+            <form id="addDutyForm">
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;margin-bottom:8px;font-weight:bold;color:#333;">值班日期 <span style="color:red;">*</span></label>
+                    <input type="date" id="dutyDate" required style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;margin-bottom:8px;font-weight:bold;color:#333;">时间段 <span style="color:red;">*</span></label>
+                    <div style="display:flex;gap:10px;align-items:center;">
+                        <input type="time" id="dutyStartTime" required style="width:50%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                        <span>至</span>
+                        <input type="time" id="dutyEndTime" required style="width:50%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                    </div>
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;margin-bottom:8px;font-weight:bold;color:#333;">值班人员 <span style="color:red;">*</span></label>
+                    <input type="text" id="dutyName" required placeholder="请输入值班人员姓名" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;margin-bottom:8px;font-weight:bold;color:#333;">服务队</label>
+                    <select id="dutyTeam" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                        <option value="">请选择服务队</option>
+                        <option value="爱心家园">爱心家园服务队</option>
+                        <option value="绿色环保">绿色环保服务队</option>
+                        <option value="文化之旅">文化之旅服务队</option>
+                        <option value="安全使者">安全使者服务队</option>
+                    </select>
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;margin-bottom:8px;font-weight:bold;color:#333;">值班地点 <span style="color:red;">*</span></label>
+                    <input type="text" id="dutyLocation" required placeholder="如：校门口、操场、图书馆" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                </div>
+                <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:24px;">
+                    <button type="button" onclick="closeAddDutyModal()" style="padding:10px 20px;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">取消</button>
+                    <button type="submit" style="padding:10px 20px;border:none;border-radius:8px;background:linear-gradient(135deg, #DC143C, #FF4444);color:white;cursor:pointer;">确认</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 消息中心 -->
+    <div id="messages" class="page-content" style="display: none;">
+        <div class="dashboard">
+            <div class="header"><div class="logo-text">青志汇</div><div>管理员</div></div>
+            <div class="main-content">
+                <div class="sidebar">
+                    <div class="menu-item" onclick="showPage('dashboard')">🏠 首页</div>
+                    <div class="menu-item" onclick="showPage('members')">👥 成员管理</div>
+                    <div class="menu-item" onclick="showPage('teams')">👨‍👩‍👧‍👦 服务队</div>
+                    <div class="menu-item" onclick="showPage('activities')">📅 活动报名</div>
+                    <div class="menu-item" onclick="showPage('duty')">⏰ 值班安排</div>
+                    <div class="menu-item active">🔔 消息中心</div>
+                </div>
+                <div class="content-area">
+                    <div class="page-header">
+                        <h2 class="page-title">消息中心</h2>
+                        <div style="display:flex;gap:12px;">
+                            <button onclick="markAllAsRead()" style="padding:8px 16px;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">全部已读</button>
+                            <button onclick="openSendNotificationModal()" style="padding:8px 16px;border:1px solid #DC143C;border-radius:8px;background:#DC143C;color:white;cursor:pointer;">发送通知</button>
+                        </div>
+                    </div>
+                    <div style="background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);padding:16px;">
+                        <div class="message-filters" id="messageFilters">
+                            <span class="filter-tag active" data-filter="all" onclick="filterMessages('all')">全部 (<span id="countAll">0</span>)</span>
+                            <span class="filter-tag" data-filter="unread" onclick="filterMessages('unread')">未读 (<span id="countUnread">0</span>)</span>
+                            <span class="filter-tag" data-filter="system" onclick="filterMessages('system')">系统通知 (<span id="countSystem">0</span>)</span>
+                            <span class="filter-tag" data-filter="activity" onclick="filterMessages('activity')">活动通知 (<span id="countActivity">0</span>)</span>
+                            <span class="filter-tag" data-filter="duty" onclick="filterMessages('duty')">值班通知 (<span id="countDuty">0</span>)</span>
+                        </div>
+                        <div id="messageList" class="message-list">
+                            <!-- 由JS动态生成 -->
+                        </div>
+                        <div id="messageEmpty" style="text-align:center;color:#999;padding:40px;display:none;">暂无消息</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 发送通知弹窗 -->
+    <div id="sendNotificationModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;justify-content:center;align-items:center;">
+        <div style="background:white;border-radius:12px;padding:30px;width:90%;max-width:500px;max-height:90vh;overflow-y:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <h2 style="margin:0;color:#333;">发送通知</h2>
+                <button onclick="closeSendNotificationModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:#999;">×</button>
+            </div>
+            <form id="sendNotificationForm">
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;margin-bottom:8px;font-weight:bold;color:#333;">通知类型 <span style="color:red;">*</span></label>
+                    <select id="notifType" required style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                        <option value="">请选择类型</option>
+                        <option value="system">系统通知</option>
+                        <option value="activity">活动通知</option>
+                        <option value="duty">值班通知</option>
+                    </select>
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;margin-bottom:8px;font-weight:bold;color:#333;">通知标题 <span style="color:red;">*</span></label>
+                    <input type="text" id="notifTitle" required placeholder="请输入通知标题" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;margin-bottom:8px;font-weight:bold;color:#333;">通知内容 <span style="color:red;">*</span></label>
+                    <textarea id="notifContent" rows="4" required placeholder="请输入通知内容" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;resize:vertical;"></textarea>
+                </div>
+                <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:24px;">
+                    <button type="button" onclick="closeSendNotificationModal()" style="padding:10px 20px;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">取消</button>
+                    <button type="submit" style="padding:10px 20px;border:none;border-radius:8px;background:linear-gradient(135deg, #DC143C, #FF4444);color:white;cursor:pointer;">发送</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 消息详情弹窗 -->
+    <div id="messageDetailModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;justify-content:center;align-items:center;">
+        <div style="background:white;border-radius:12px;padding:30px;width:90%;max-width:500px;max-height:90vh;overflow-y:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+                <div>
+                    <h2 id="detailNotifTitle" style="margin:0;color:#333;">消息标题</h2>
+                    <span id="detailNotifType" class="status-tag active" style="margin-top:8px;display:inline-block;">系统通知</span>
+                </div>
+                <button onclick="closeMessageDetailModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:#999;">×</button>
+            </div>
+            <div style="color:#666;font-size:14px;margin-bottom:20px;">
+                <p id="detailNotifTime" style="margin:0 0 16px 0;">发送时间：2024-03-15 10:00</p>
+            </div>
+            <div style="border-top:1px solid #eee;padding-top:20px;">
+                <p id="detailNotifContent" style="color:#333;line-height:1.8;margin:0;">消息内容...</p>
+            </div>
+            <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:24px;">
+                <button onclick="closeMessageDetailModal()" style="padding:10px 20px;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 成员数据（包含更多信息）
+        let members = [
+            { id: 1, name: '张三', studentId: '2021001', gender: '男', grade: '2021级', team: '爱心家园', hours: '48.5', status: '正常' },
+            { id: 2, name: '李四', studentId: '2021002', gender: '女', grade: '2022级', team: '绿色环保', hours: '36.0', status: '正常' },
+            { id: 3, name: '王五', studentId: '2021003', gender: '男', grade: '2021级', team: '文化之旅', hours: '52.5', status: '正常' },
+            { id: 4, name: '赵六', studentId: '2021004', gender: '女', grade: '2022级', team: '安全使者', hours: '28.0', status: '禁用' },
+            { id: 5, name: '孙七', studentId: '2021005', gender: '男', grade: '2023级', team: '爱心家园', hours: '35.0', status: '正常' },
+            { id: 6, name: '周八', studentId: '2021006', gender: '女', grade: '2021级', team: '爱心家园', hours: '42.0', status: '正常' },
+            { id: 7, name: '吴九', studentId: '2021007', gender: '男', grade: '2022级', team: '绿色环保', hours: '30.0', status: '正常' },
+            { id: 8, name: '郑十', studentId: '2021008', gender: '女', grade: '2023级', team: '文化之旅', hours: '25.0', status: '正常' },
+            { id: 9, name: '钱一', studentId: '2021009', gender: '男', grade: '2021级', team: '文化之旅', hours: '40.0', status: '正常' },
+            { id: 10, name: '陈二', studentId: '2021010', gender: '女', grade: '2022级', team: '安全使者', hours: '33.0', status: '正常' }
+        ];
+        let nextMemberId = 11;
+        
+        // 服务队描述
+        const teamDescriptions = {
+            '爱心家园': '关爱孤寡老人、留守儿童，传递温暖与爱心',
+            '绿色环保': '环保宣传、垃圾分类、植树造林活动',
+            '文化之旅': '文化传承、博物馆讲解、非遗推广',
+            '安全使者': '安全宣传、交通引导、应急演练'
+        };
+        
+        function renderMemberTable(membersToRender) {
+            const tbody = document.getElementById('memberTableBody');
+            if (!tbody) return;
+            
+            const data = membersToRender || members;
+            
+            tbody.innerHTML = data.map(member => `
+                <tr>
+                    <td>${member.name}</td>
+                    <td>${member.studentId}</td>
+                    <td>${member.team}</td>
+                    <td>${member.hours}小时</td>
+                    <td><span class="tag ${member.status === '正常' ? 'success' : 'warning'}">${member.status}</span></td>
+                    <td>
+                        <button class="btn-sm primary" onclick="alert('编辑功能演示：${member.name}')">编辑</button>
+                        <button class="btn-sm danger" onclick="deleteMember(${member.id})">删除</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        function openAddMemberModal() {
+            document.getElementById('addMemberModal').style.display = 'flex';
+            // 清空表单
+            document.getElementById('memberName').value = '';
+            document.getElementById('memberStudentId').value = '';
+            document.getElementById('memberGender').value = '';
+            document.getElementById('memberGrade').value = '';
+            document.getElementById('memberCollege').value = '';
+            document.getElementById('memberMajor').value = '';
+            document.getElementById('memberPhone').value = '';
+            document.getElementById('memberEmail').value = '';
+            document.getElementById('memberTeam').value = '';
+        }
+        
+        function closeAddMemberModal() {
+            document.getElementById('addMemberModal').style.display = 'none';
+        }
+        
+        document.getElementById('addMemberForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('memberName').value.trim();
+            const studentId = document.getElementById('memberStudentId').value.trim();
+            const gender = document.getElementById('memberGender').value;
+            const grade = document.getElementById('memberGrade').value.trim();
+            const college = document.getElementById('memberCollege').value.trim();
+            const major = document.getElementById('memberMajor').value.trim();
+            const phone = document.getElementById('memberPhone').value.trim();
+            const email = document.getElementById('memberEmail').value.trim();
+            const team = document.getElementById('memberTeam').value;
+            
+            if (!name || !studentId) {
+                alert('请填写必填项：姓名和学号');
+                return;
+            }
+            
+            if (!team) {
+                alert('请选择服务队');
+                return;
+            }
+            
+            // 检查学号是否已存在
+            if (members.some(m => m.studentId === studentId)) {
+                alert('该学号已存在');
+                return;
+            }
+            
+            const newMember = {
+                id: nextMemberId++,
+                name: name,
+                studentId: studentId,
+                gender: gender || '未知',
+                grade: grade || '未知',
+                team: team,
+                hours: '0.0',
+                status: '正常'
+            };
+            
+            members.push(newMember);
+            renderMemberTable();
+            updateTeamCounts();  // 更新服务队成员数量
+            closeAddMemberModal();
+            alert('成员添加成功！');
+        });
+        
+        function deleteMember(id) {
+            if (confirm('确定要删除该成员吗？')) {
+                members = members.filter(m => m.id !== id);
+                renderMemberTable();
+                updateTeamCounts();  // 更新服务队成员数量
+                alert('删除成功！');
+            }
+        }
+        
+        function searchMembers() {
+            const keyword = document.getElementById('memberSearchInput').value.trim().toLowerCase();
+            if (!keyword) {
+                renderMemberTable();
+                return;
+            }
+            
+            const filtered = members.filter(m => 
+                m.name.toLowerCase().includes(keyword) || 
+                m.studentId.toLowerCase().includes(keyword)
+            );
+            renderMemberTable(filtered);
+        }
+        
+        // 显示服务队成员
+        function showTeamMembers(teamName) {
+            document.getElementById('teamModalTitle').textContent = teamName + '服务队';
+            document.getElementById('teamModalDesc').textContent = teamDescriptions[teamName];
+            document.getElementById('teamMemberSearch').value = '';
+            
+            const teamMembers = members.filter(m => m.team === teamName);
+            renderTeamMembersTable(teamMembers);
+            
+            document.getElementById('teamMembersModal').style.display = 'flex';
+        }
+        
+        // 渲染服务队成员表格
+        function renderTeamMembersTable(teamMembers) {
+            const tbody = document.getElementById('teamMembersTableBody');
+            const countDiv = document.getElementById('teamMemberCount');
+            
+            tbody.innerHTML = teamMembers.map(member => `
+                <tr>
+                    <td>${member.name}</td>
+                    <td>${member.studentId}</td>
+                    <td>${member.gender}</td>
+                    <td>${member.grade}</td>
+                    <td>${member.hours}小时</td>
+                    <td><span class="tag ${member.status === '正常' ? 'success' : 'warning'}">${member.status}</span></td>
+                </tr>
+            `).join('');
+            
+            countDiv.textContent = `共 ${teamMembers.length} 名成员`;
+        }
+        
+        // 筛选服务队成员
+        function filterTeamMembers() {
+            const teamName = document.getElementById('teamModalTitle').textContent.replace('服务队', '');
+            const keyword = document.getElementById('teamMemberSearch').value.trim().toLowerCase();
+            
+            let teamMembers = members.filter(m => m.team === teamName);
+            
+            if (keyword) {
+                teamMembers = teamMembers.filter(m => 
+                    m.name.toLowerCase().includes(keyword) || 
+                    m.studentId.toLowerCase().includes(keyword)
+                );
+            }
+            
+            renderTeamMembersTable(teamMembers);
+        }
+        
+        // 关闭服务队成员弹窗
+        function closeTeamMembersModal() {
+            document.getElementById('teamMembersModal').style.display = 'none';
+        }
+        
+        // 页面加载时渲染成员列表和更新服务队成员数量
+        window.addEventListener('DOMContentLoaded', function() {
+            renderMemberTable();
+            updateTeamCounts();
+        });
+        
+        // 点击弹窗背景关闭
+        document.getElementById('teamMembersModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeTeamMembersModal();
+            }
+        });
+        
+        // 更新服务队成员数量
+        function updateTeamCounts() {
+            const teams = ['爱心家园', '绿色环保', '文化之旅', '安全使者'];
+            teams.forEach(team => {
+                const count = members.filter(m => m.team === team).length;
+                const countElement = document.getElementById('teamCount' + team);
+                if (countElement) {
+                    countElement.textContent = count;
+                }
+            });
+        }
+        
+        // ========== 活动报名相关 ==========
+        
+        // 活动数据
+        let activities = [
+            { id: 1, name: '社区爱心帮扶活动', date: '2024-03-15 09:00', location: '阳光社区', description: '关爱社区孤寡老人，为他们送去温暖和关怀，帮助打扫卫生、聊天陪伴。', status: '报名中', enrolled: 25, limit: 50 },
+            { id: 2, name: '校园环保志愿行', date: '2024-03-16 14:00', location: '学校操场', description: '清理校园垃圾，宣传环保理念，美化校园环境。', status: '报名中', enrolled: 30, limit: 40 },
+            { id: 3, name: '文化之旅博物馆讲解', date: '2024-03-17 10:00', location: '市博物馆', description: '为参观博物馆的游客提供讲解服务，传播历史文化知识。', status: '报名中', enrolled: 15, limit: 20 },
+            { id: 4, name: '交通安全宣传活动', date: '2024-03-10 09:00', location: '市中心广场', description: '宣传交通安全知识，协助交警维持交通秩序。', status: '已结束', enrolled: 20, limit: 30 },
+            { id: 5, name: '图书馆志愿服务', date: '2024-03-20 08:00', location: '校图书馆', description: '协助图书馆管理员整理书籍、引导读者、维护阅读秩序。', status: '报名中', enrolled: 18, limit: 25 },
+            { id: 6, name: '支教帮扶活动', date: '2024-03-22 09:00', location: '郊区小学', description: '为郊区小学的孩子们提供学业辅导和兴趣培养。', status: '报名中', enrolled: 12, limit: 15 }
+        ];
+        
+        let currentActivity = null;
+        
+        // 渲染活动列表
+        function renderActivitiesList(activitiesToRender) {
+            const container = document.getElementById('activitiesList');
+            if (!container) return;
+            
+            const data = activitiesToRender || activities;
+            
+            container.innerHTML = data.map(activity => `
+                <div class="activity-card">
+                    <div class="activity-header">
+                        <h3 class="activity-title">${activity.name}</h3>
+                        <span class="status-tag ${activity.status === '报名中' ? 'active' : 'ended'}">${activity.status}</span>
+                    </div>
+                    <div class="activity-info">
+                        <div class="info-item">📅 ${activity.date}</div>
+                        <div class="info-item">📍 ${activity.location}</div>
+                        <div class="info-item">👥 已报名: ${activity.enrolled}人 / ${activity.limit}人</div>
+                    </div>
+                    <p class="activity-description">${activity.description}</p>
+                    <div class="activity-footer">
+                        ${activity.status === '报名中' 
+                            ? `<button class="btn-sm primary" onclick="openActivityModal(${activity.id})">立即报名</button>`
+                            : `<span style="color:#999;">报名已结束</span>`
+                        }
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // 筛选活动
+        function filterActivities() {
+            const keyword = document.getElementById('activitySearchInput').value.trim().toLowerCase();
+            const status = document.getElementById('activityStatusFilter').value;
+            
+            let filtered = activities;
+            
+            if (keyword) {
+                filtered = filtered.filter(a => a.name.toLowerCase().includes(keyword));
+            }
+            
+            if (status) {
+                filtered = filtered.filter(a => a.status === status);
+            }
+            
+            renderActivitiesList(filtered);
+        }
+        
+        // 打开活动详情/报名弹窗
+        function openActivityModal(activityId) {
+            const activity = activities.find(a => a.id === activityId);
+            if (!activity) return;
+            
+            currentActivity = activity;
+            
+            document.getElementById('activityModalTitle').textContent = activity.name;
+            document.getElementById('activityModalStatus').textContent = activity.status;
+            document.getElementById('activityModalStatus').className = `status-tag ${activity.status === '报名中' ? 'active' : 'ended'}`;
+            document.getElementById('activityModalInfo').innerHTML = `
+                <p><strong>📅 时间：</strong>${activity.date}</p>
+                <p><strong>📍 地点：</strong>${activity.location}</p>
+                <p><strong>👥 名额：</strong>${activity.enrolled} / ${activity.limit} 人</p>
+                <p><strong>📝 描述：</strong>${activity.description}</p>
+            `;
+            
+            // 清空表单
+            document.getElementById('signupName').value = '';
+            document.getElementById('signupStudentId').value = '';
+            document.getElementById('signupPhone').value = '';
+            document.getElementById('signupTeam').value = '';
+            document.getElementById('signupRemark').value = '';
+            
+            document.getElementById('activityDetailModal').style.display = 'flex';
+        }
+        
+        // 关闭活动弹窗
+        function closeActivityModal() {
+            document.getElementById('activityDetailModal').style.display = 'none';
+            currentActivity = null;
+        }
+        
+        // 处理报名表单提交
+        document.getElementById('activitySignupForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!currentActivity) return;
+            
+            const name = document.getElementById('signupName').value.trim();
+            const studentId = document.getElementById('signupStudentId').value.trim();
+            const phone = document.getElementById('signupPhone').value.trim();
+            const team = document.getElementById('signupTeam').value;
+            const remark = document.getElementById('signupRemark').value.trim();
+            
+            if (!name || !studentId || !phone) {
+                alert('请填写必填项');
+                return;
+            }
+            
+            if (currentActivity.enrolled >= currentActivity.limit) {
+                alert('抱歉，该活动报名人数已满！');
+                return;
+            }
+            
+            // 检查是否已报名（根据学号判断）
+            if (signups.some(s => s.studentId === studentId && s.activityId === currentActivity.id)) {
+                alert('您已报名该活动，无需重复报名！');
+                return;
+            }
+            
+            // 添加报名记录
+            const signup = {
+                id: nextSignupId++,
+                activityId: currentActivity.id,
+                activityName: currentActivity.name,
+                name: name,
+                studentId: studentId,
+                phone: phone,
+                team: team || '未选择',
+                remark: remark,
+                signupTime: new Date().toLocaleString(),
+                status: '已报名'
+            };
+            signups.push(signup);
+            
+            // 更新活动已报名人数
+            currentActivity.enrolled++;
+            renderActivitiesList();
+            
+            closeActivityModal();
+            alert(`恭喜！您已成功报名「${currentActivity.name}」活动！`);
+        });
+        
+        // 报名记录数据
+        let signups = [];
+        let nextSignupId = 1;
+        
+        // 点击弹窗背景关闭
+        document.getElementById('activityDetailModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeActivityModal();
+            }
+        });
+        
+        // ========== 值班安排相关 ==========
+        
+        // 值班数据
+        let duties = [
+            { id: 1, date: '2026-06-10', startTime: '08:00', endTime: '10:00', name: '张三', team: '爱心家园', location: '校门口' },
+            { id: 2, date: '2026-06-10', startTime: '10:00', endTime: '12:00', name: '李四', team: '绿色环保', location: '操场' },
+            { id: 3, date: '2026-06-10', startTime: '14:00', endTime: '16:00', name: '王五', team: '文化之旅', location: '图书馆' },
+            { id: 4, date: '2026-06-10', startTime: '16:00', endTime: '18:00', name: '赵六', team: '安全使者', location: '教学楼' }
+        ];
+        let nextDutyId = 5;
+        let currentWeekOffset = 0;
+        
+        // 获取当前显示的日期范围
+        function getCurrentWeekDates() {
+            const today = new Date();
+            const dayOfWeek = today.getDay() || 7;
+            const monday = new Date(today);
+            monday.setDate(today.getDate() - dayOfWeek + 1 + (currentWeekOffset * 7));
+            
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+            
+            return {
+                start: monday,
+                end: sunday,
+                startStr: monday.toISOString().split('T')[0],
+                endStr: sunday.toISOString().split('T')[0]
+            };
+        }
+        
+        // 渲染值班列表
+        function renderDutyTable() {
+            const tbody = document.getElementById('dutyTableBody');
+            const emptyMsg = document.getElementById('dutyEmptyMsg');
+            if (!tbody) return;
+            
+            const weekDates = getCurrentWeekDates();
+            
+            // 筛选当前周的值班
+            let weekDuties = duties.filter(d => d.date >= weekDates.startStr && d.date <= weekDates.endStr);
+            
+            // 普通用户只能看到自己的值班
+            if (currentUser && currentUser.role !== 'admin') {
+                weekDuties = weekDuties.filter(d => d.name === currentUser.name);
+            }
+            
+            if (weekDuties.length === 0) {
+                tbody.innerHTML = '';
+                emptyMsg.style.display = 'block';
+                emptyMsg.textContent = currentUser && currentUser.role !== 'admin' ? '您本周没有值班安排' : '暂无值班安排';
+            } else {
+                emptyMsg.style.display = 'none';
+                tbody.innerHTML = weekDuties.map(duty => `
+                    <tr>
+                        <td>${duty.date}</td>
+                        <td>${duty.startTime}-${duty.endTime}</td>
+                        <td>${duty.name}</td>
+                        <td>${duty.team || '-'}</td>
+                        <td>${duty.location}</td>
+                        <td>
+                            ${currentUser && currentUser.role === 'admin' ? `
+                                <button class="btn-sm primary" onclick="editDuty(${duty.id})">编辑</button>
+                                <button class="btn-sm danger" onclick="deleteDuty(${duty.id})">删除</button>
+                            ` : '<span style="color:#999;">-</span>'}
+                        </td>
+                    </tr>
+                `).join('');
+            }
+            
+            // 更新日历显示
+            updateCalendarHeader();
+        }
+        
+        // 更新日历头部日期显示
+        function updateCalendarHeader() {
+            const weekDates = getCurrentWeekDates();
+            const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+            
+            document.getElementById('weekLabel').textContent = `${weekDates.startStr} 至 ${weekDates.endStr}`;
+            
+            const header = document.getElementById('calendarHeader');
+            const dayHeaders = header.querySelectorAll('.day-header');
+            
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(weekDates.start);
+                date.setDate(weekDates.start.getDate() + i);
+                const dateStr = date.toISOString().split('T')[0];
+                const isToday = dateStr === new Date().toISOString().split('T')[0];
+                
+                dayHeaders[i].innerHTML = `<div class="day-name">${days[i]}</div><div class="day-date ${isToday ? 'today' : ''}">${date.getDate()}</div>`;
+            }
+        }
+        
+        // 切换周
+        function changeWeek(offset) {
+            currentWeekOffset += offset;
+            renderDutyTable();
+        }
+        
+        // 打开添加值班弹窗
+        function openAddDutyModal() {
+            // 权限检查：普通用户不能安排值班
+            if (currentUser && currentUser.role !== 'admin') {
+                alert('您没有权限安排值班');
+                return;
+            }
+            editingDutyId = null;
+            document.getElementById('dutyModalTitle').textContent = '安排值班';
+            
+            // 设置默认日期为今天
+            document.getElementById('dutyDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('dutyStartTime').value = '';
+            document.getElementById('dutyEndTime').value = '';
+            document.getElementById('dutyName').value = '';
+            document.getElementById('dutyTeam').value = '';
+            document.getElementById('dutyLocation').value = '';
+            
+            document.getElementById('addDutyModal').style.display = 'flex';
+        }
+        
+        // 编辑值班
+        let editingDutyId = null;
+        
+        function editDuty(id) {
+            // 权限检查：普通用户不能编辑值班
+            if (currentUser && currentUser.role !== 'admin') {
+                alert('您没有权限编辑值班');
+                return;
+            }
+            const duty = duties.find(d => d.id === id);
+            if (!duty) return;
+            
+            editingDutyId = id;
+            document.getElementById('dutyModalTitle').textContent = '编辑值班';
+            
+            document.getElementById('dutyDate').value = duty.date;
+            document.getElementById('dutyStartTime').value = duty.startTime;
+            document.getElementById('dutyEndTime').value = duty.endTime;
+            document.getElementById('dutyName').value = duty.name;
+            document.getElementById('dutyTeam').value = duty.team || '';
+            document.getElementById('dutyLocation').value = duty.location;
+            
+            document.getElementById('addDutyModal').style.display = 'flex';
+        }
+        
+        // 关闭添加值班弹窗
+        function closeAddDutyModal() {
+            document.getElementById('addDutyModal').style.display = 'none';
+            editingDutyId = null;
+        }
+        
+        // 处理值班表单提交
+        document.getElementById('addDutyForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const date = document.getElementById('dutyDate').value;
+            const startTime = document.getElementById('dutyStartTime').value;
+            const endTime = document.getElementById('dutyEndTime').value;
+            const name = document.getElementById('dutyName').value.trim();
+            const team = document.getElementById('dutyTeam').value;
+            const location = document.getElementById('dutyLocation').value.trim();
+            
+            if (!date || !startTime || !endTime || !name || !location) {
+                alert('请填写必填项');
+                return;
+            }
+            
+            if (editingDutyId) {
+                // 编辑模式
+                const duty = duties.find(d => d.id === editingDutyId);
+                if (duty) {
+                    duty.date = date;
+                    duty.startTime = startTime;
+                    duty.endTime = endTime;
+                    duty.name = name;
+                    duty.team = team || '';
+                    duty.location = location;
+                }
+                alert('值班信息已更新！');
+            } else {
+                // 新增模式
+                duties.push({
+                    id: nextDutyId++,
+                    date: date,
+                    startTime: startTime,
+                    endTime: endTime,
+                    name: name,
+                    team: team || '',
+                    location: location
+                });
+                alert('值班安排已添加！');
+            }
+            
+            renderDutyTable();
+            closeAddDutyModal();
+        });
+        
+        // 删除值班
+        function deleteDuty(id) {
+            // 权限检查：普通用户不能删除值班
+            if (currentUser && currentUser.role !== 'admin') {
+                alert('您没有权限删除值班');
+                return;
+            }
+            if (confirm('确定要删除该值班安排吗？')) {
+                duties = duties.filter(d => d.id !== id);
+                renderDutyTable();
+                alert('删除成功！');
+            }
+        }
+        
+        // 点击弹窗背景关闭
+        document.getElementById('addDutyModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeAddDutyModal();
+            }
+        });
+        
+        // 页面加载时初始化值班列表
+        window.addEventListener('DOMContentLoaded', function() {
+            renderMemberTable();
+            updateTeamCounts();
+            renderActivitiesList();
+            renderDutyTable();
+            renderMessages();
+        });
+        
+        // ========== 消息中心相关 ==========
+        
+        // 消息数据
+        let notifications = [
+            { id: 1, type: 'activity', typeName: '活动通知', title: '新活动通知', content: '【爱心家园】社区帮扶活动将于本周末举行，请志愿者们积极报名参加。', time: '5分钟前', isRead: false, createTime: new Date().toISOString() },
+            { id: 2, type: 'system', typeName: '系统通知', title: '系统维护通知', content: '系统将于今晚22:00-24:00进行维护升级，请提前保存数据。', time: '1小时前', isRead: false, createTime: new Date(Date.now() - 3600000).toISOString() },
+            { id: 3, type: 'duty', typeName: '值班通知', title: '值班安排更新', content: '您本周三的值班时间已调整为下午14:00-16:00，请留意查看。', time: '3小时前', isRead: true, createTime: new Date(Date.now() - 10800000).toISOString() },
+            { id: 4, type: 'system', typeName: '系统通知', title: '服务队会议', content: '本周六上午9点将召开服务队全体会议，请准时参加。', time: '昨天', isRead: true, createTime: new Date(Date.now() - 86400000).toISOString() },
+            { id: 5, type: 'activity', typeName: '活动通知', title: '活动报名成功', content: '您已成功报名参加"校园环保志愿行"活动，请准时参加。', time: '昨天', isRead: false, createTime: new Date(Date.now() - 86400000).toISOString() }
+        ];
+        let nextNotifId = 6;
+        let currentMessageFilter = 'all';
+        
+        // 获取消息类型图标
+        function getNotifIcon(type) {
+            const icons = {
+                'system': '🔔',
+                'activity': '📅',
+                'duty': '⏰'
+            };
+            return icons[type] || '📢';
+        }
+        
+        // 获取类型名称
+        function getTypeName(type) {
+            const names = {
+                'system': '系统通知',
+                'activity': '活动通知',
+                'duty': '值班通知'
+            };
+            return names[type] || '通知';
+        }
+        
+        // 渲染消息列表
+        function renderMessages() {
+            const container = document.getElementById('messageList');
+            const emptyMsg = document.getElementById('messageEmpty');
+            if (!container) return;
+            
+            let filtered = notifications;
+            
+            if (currentMessageFilter === 'unread') {
+                filtered = notifications.filter(n => !n.isRead);
+            } else if (currentMessageFilter === 'system') {
+                filtered = notifications.filter(n => n.type === 'system');
+            } else if (currentMessageFilter === 'activity') {
+                filtered = notifications.filter(n => n.type === 'activity');
+            } else if (currentMessageFilter === 'duty') {
+                filtered = notifications.filter(n => n.type === 'duty');
+            }
+            
+            // 更新计数
+            document.getElementById('countAll').textContent = notifications.length;
+            document.getElementById('countUnread').textContent = notifications.filter(n => !n.isRead).length;
+            document.getElementById('countSystem').textContent = notifications.filter(n => n.type === 'system').length;
+            document.getElementById('countActivity').textContent = notifications.filter(n => n.type === 'activity').length;
+            document.getElementById('countDuty').textContent = notifications.filter(n => n.type === 'duty').length;
+            
+            if (filtered.length === 0) {
+                container.innerHTML = '';
+                emptyMsg.style.display = 'block';
+            } else {
+                emptyMsg.style.display = 'none';
+                container.innerHTML = filtered.map(notif => `
+                    <div class="message-card ${notif.isRead ? '' : 'unread'}" onclick="viewMessageDetail(${notif.id})" style="cursor:pointer;">
+                        <div class="message-header">
+                            <div class="msg-icon ${notif.type}">${getNotifIcon(notif.type)}</div>
+                            <div style="flex:1;">
+                                <div class="msg-title">${notif.title}</div>
+                                <div class="msg-time">${notif.time}</div>
+                            </div>
+                            ${notif.isRead ? '' : '<span class="unread-dot"></span>'}
+                        </div>
+                        <p class="msg-content">${notif.content}</p>
+                        <div style="text-align:right;margin-top:8px;">
+                            <button onclick="event.stopPropagation();toggleRead(${notif.id})" class="btn-sm" style="background:${notif.isRead ? '#f56c6c' : '#67c23a'};color:white;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;">
+                                ${notif.isRead ? '标记未读' : '标记已读'}
+                            </button>
+                            <button onclick="event.stopPropagation();deleteMessage(${notif.id})" class="btn-sm danger" style="margin-left:8px;">删除</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            // 更新筛选标签状态
+            document.querySelectorAll('#messageFilters .filter-tag').forEach(tag => {
+                tag.classList.remove('active');
+                if (tag.dataset.filter === currentMessageFilter) {
+                    tag.classList.add('active');
+                }
+            });
+        }
+        
+        // 筛选消息
+        function filterMessages(filter) {
+            currentMessageFilter = filter;
+            renderMessages();
+        }
+        
+        // 标记全部已读
+        function markAllAsRead() {
+            notifications.forEach(n => n.isRead = true);
+            renderMessages();
+            alert('已全部标记为已读！');
+        }
+        
+        // 切换已读/未读状态
+        function toggleRead(id) {
+            const notif = notifications.find(n => n.id === id);
+            if (notif) {
+                notif.isRead = !notif.isRead;
+                renderMessages();
+            }
+        }
+        
+        // 删除消息
+        function deleteMessage(id) {
+            if (confirm('确定要删除该消息吗？')) {
+                notifications = notifications.filter(n => n.id !== id);
+                renderMessages();
+                alert('删除成功！');
+            }
+        }
+        
+        // 查看消息详情
+        function viewMessageDetail(id) {
+            const notif = notifications.find(n => n.id === id);
+            if (!notif) return;
+            
+            // 如果是未读消息，自动标记为已读
+            if (!notif.isRead) {
+                notif.isRead = true;
+                renderMessages();
+            }
+            
+            document.getElementById('detailNotifTitle').textContent = notif.title;
+            document.getElementById('detailNotifType').textContent = getTypeName(notif.type);
+            document.getElementById('detailNotifType').className = `status-tag ${notif.type === 'activity' ? 'active' : 'ended'}`;
+            document.getElementById('detailNotifTime').textContent = `发送时间：${new Date(notif.createTime).toLocaleString()}`;
+            document.getElementById('detailNotifContent').textContent = notif.content;
+            
+            document.getElementById('messageDetailModal').style.display = 'flex';
+        }
+        
+        // 关闭消息详情弹窗
+        function closeMessageDetailModal() {
+            document.getElementById('messageDetailModal').style.display = 'none';
+        }
+        
+        // 打开发送通知弹窗
+        function openSendNotificationModal() {
+            document.getElementById('notifType').value = '';
+            document.getElementById('notifTitle').value = '';
+            document.getElementById('notifContent').value = '';
+            document.getElementById('sendNotificationModal').style.display = 'flex';
+        }
+        
+        // 关闭发送通知弹窗
+        function closeSendNotificationModal() {
+            document.getElementById('sendNotificationModal').style.display = 'none';
+        }
+        
+        // 发送通知
+        document.getElementById('sendNotificationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // 权限检查：普通用户不能发送通知
+            if (currentUser && currentUser.role !== 'admin') {
+                alert('您没有权限发送通知');
+                return;
+            }
+            
+            const type = document.getElementById('notifType').value;
+            const title = document.getElementById('notifTitle').value.trim();
+            const content = document.getElementById('notifContent').value.trim();
+            
+            if (!type || !title || !content) {
+                alert('请填写完整信息');
+                return;
+            }
+            
+            const newNotif = {
+                id: nextNotifId++,
+                type: type,
+                typeName: getTypeName(type),
+                title: title,
+                content: content,
+                time: '刚刚',
+                isRead: true,
+                createTime: new Date().toISOString()
+            };
+            
+            notifications.unshift(newNotif);
+            renderMessages();
+            closeSendNotificationModal();
+            alert('通知已发送！');
+        });
+        
+        // 点击弹窗背景关闭
+        document.getElementById('messageDetailModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeMessageDetailModal();
+            }
+        });
+        
+        document.getElementById('sendNotificationModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeSendNotificationModal();
+            }
+        });
+    </script>
+    
+    <!-- 用户管理页面（管理员专用） -->
+    <div id="users" class="page-content" style="display: none;">
+        <div class="dashboard">
+            <div class="header">
+                <div class="logo-text">青志汇</div>
+                <div class="header-right">
+                    <div class="user-info">
+                        <span id="currentUserName2">管理员</span>
+                        <span class="tag info" id="currentUserRole2">管理员</span>
+                    </div>
+                    <button class="logout-btn" onclick="handleLogout()">退出登录</button>
+                </div>
+            </div>
+            <div class="main-content">
+                <div class="sidebar" id="sidebarMenu2">
+                    <!-- 侧边栏菜单由JS根据角色动态生成 -->
+                </div>
+                <div class="content-area">
+                    <div class="page-header">
+                        <h2 class="page-title">用户管理</h2>
+                        <button class="btn-primary" style="width:auto;padding:10px 20px;" onclick="openAddUserModal()">+ 添加用户</button>
+                    </div>
+                    <div class="search-bar">
+                        <input type="text" id="userSearchInput" class="search-input" placeholder="搜索用户名或学号" onkeyup="filterUsers()">
+                        <select id="userRoleFilter" class="filter-select" onchange="filterUsers()">
+                            <option value="">全部角色</option>
+                            <option value="admin">管理员</option>
+                            <option value="user">普通用户</option>
+                        </select>
+                    </div>
+                    <table class="member-table">
+                        <thead><tr><th>用户名</th><th>学号</th><th>角色</th><th>所属服务队</th><th>注册时间</th><th>状态</th><th>操作</th></tr></thead>
+                        <tbody id="userTableBody">
+                            <!-- 由JS动态生成 -->
+                        </tbody>
+                    </table>
+                    <div id="userEmptyMsg" style="text-align:center;color:#999;padding:40px;display:none;">暂无用户</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 添加用户弹窗 -->
+    <div id="addUserModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;justify-content:center;align-items:center;">
+        <div style="background:white;border-radius:12px;padding:30px;width:90%;max-width:500px;max-height:90vh;overflow-y:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <h2 id="userModalTitle" style="margin:0;color:#333;">添加用户</h2>
+                <button onclick="closeAddUserModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:#999;">×</button>
+            </div>
+            <form id="addUserForm">
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;margin-bottom:8px;font-weight:bold;color:#333;">用户名 <span style="color:red;">*</span></label>
+                    <input type="text" id="userName" required placeholder="请输入用户名" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;margin-bottom:8px;font-weight:bold;color:#333;">学号 <span style="color:red;">*</span></label>
+                    <input type="text" id="userStudentId" required placeholder="请输入学号" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;margin-bottom:8px;font-weight:bold;color:#333;">密码 <span style="color:red;">*</span></label>
+                    <input type="password" id="userPassword" required placeholder="请输入密码（至少6位）" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;margin-bottom:8px;font-weight:bold;color:#333;">角色 <span style="color:red;">*</span></label>
+                    <select id="userRole" required style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                        <option value="">请选择角色</option>
+                        <option value="admin">管理员</option>
+                        <option value="user">普通用户</option>
+                    </select>
+                </div>
+                <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:24px;">
+                    <button type="button" onclick="closeAddUserModal()" style="padding:10px 20px;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">取消</button>
+                    <button type="submit" style="padding:10px 20px;border:none;border-radius:8px;background:linear-gradient(135deg, #DC143C, #FF4444);color:white;cursor:pointer;">确认</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // ========== 用户系统 ==========
+        
+        // 用户数据 - 初始管理员账号
+        let users = [
+            { id: 1, name: '管理员', username: 'admin', password: 'admin123', role: 'admin', team: '爱心家园', createTime: '2024-01-01', status: '正常' },
+            { id: 2, name: '张三', username: 'user1', password: 'user123', role: 'user', team: '爱心家园', createTime: '2024-02-15', status: '正常' },
+            { id: 3, name: '李四', username: 'user2', password: 'user123', role: 'user', team: '绿色环保', createTime: '2024-02-20', status: '正常' }
+        ];
+        let nextUserId = 4;
+        
+        // 当前登录用户
+        let currentUser = null;
+        
+        // 管理员侧边栏菜单
+        const adminMenus = [
+            { id: 'dashboard', icon: '🏠', name: '首页' },
+            { id: 'members', icon: '👥', name: '成员管理' },
+            { id: 'teams', icon: '👨‍👩‍👧‍👦', name: '服务队' },
+            { id: 'activities', icon: '📅', name: '活动报名' },
+            { id: 'duty', icon: '⏰', name: '值班安排' },
+            { id: 'messages', icon: '🔔', name: '消息中心' },
+            { id: 'users', icon: '⚙️', name: '用户管理' }
+        ];
+        
+        // 普通用户侧边栏菜单
+        const userMenus = [
+            { id: 'dashboard', icon: '🏠', name: '首页' },
+            { id: 'activities', icon: '📅', name: '活动报名' },
+            { id: 'duty', icon: '⏰', name: '我的值班' },
+            { id: 'messages', icon: '🔔', name: '消息中心' }
+        ];
+        
+        // 渲染侧边栏菜单
+        function renderSidebarMenus(isAdmin, containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            const menus = isAdmin ? adminMenus : userMenus;
+            container.innerHTML = menus.map(menu => `
+                <div class="menu-item" onclick="showPage('${menu.id}')">${menu.icon} ${menu.name}</div>
+            `).join('');
+        }
+        
+        // 处理登录
+        function handleLogin() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            
+            const user = users.find(u => u.username === username && u.password === password);
+            
+            if (user) {
+                currentUser = user;
+                document.getElementById('loginError').style.display = 'none';
+                
+                // 更新header显示
+                document.getElementById('currentUserName').textContent = user.name;
+                document.getElementById('currentUserRole').textContent = user.role === 'admin' ? '管理员' : '普通用户';
+                
+                // 渲染侧边栏
+                renderSidebarMenus(user.role === 'admin', 'sidebarMenu');
+                
+                // 跳转到首页
+                showPage('dashboard');
+                
+                // 隐藏调试标签
+                document.getElementById('debugTabs').style.display = 'none';
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+            }
+        }
+        
+        // 处理退出登录
+        function handleLogout() {
+            currentUser = null;
+            showPage('login');
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('debugTabs').style.display = 'flex';
+        }
+        
+        // 检查登录状态
+        function checkLogin() {
+            if (!currentUser) {
+                showPage('login');
+                return false;
+            }
+            return true;
+        }
+        
+        // 修改showPage函数
+        const originalShowPage = window.showPage;
+        
+        // ========== 用户管理相关 ==========
+        
+        // 渲染用户列表
+        function renderUserTable() {
+            const tbody = document.getElementById('userTableBody');
+            const emptyMsg = document.getElementById('userEmptyMsg');
+            if (!tbody) return;
+            
+            const keyword = document.getElementById('userSearchInput').value.trim().toLowerCase();
+            const roleFilter = document.getElementById('userRoleFilter').value;
+            
+            let filtered = users;
+            
+            if (keyword) {
+                filtered = filtered.filter(u => u.name.toLowerCase().includes(keyword) || u.username.toLowerCase().includes(keyword));
+            }
+            
+            if (roleFilter) {
+                filtered = filtered.filter(u => u.role === roleFilter);
+            }
+            
+            if (filtered.length === 0) {
+                tbody.innerHTML = '';
+                emptyMsg.style.display = 'block';
+            } else {
+                emptyMsg.style.display = 'none';
+                tbody.innerHTML = filtered.map(user => `
+                    <tr>
+                        <td>${user.name}</td>
+                        <td>${user.username}</td>
+                        <td><span class="tag ${user.role === 'admin' ? 'warning' : 'success'}">${user.role === 'admin' ? '管理员' : '普通用户'}</span></td>
+                        <td>${user.team || '-'}</td>
+                        <td>${user.createTime}</td>
+                        <td><span class="tag ${user.status === '正常' ? 'success' : 'warning'}">${user.status}</span></td>
+                        <td>
+                            ${user.id !== 1 ? `<button class="btn-sm danger" onclick="deleteUser(${user.id})">删除</button>` : '<span style="color:#999;">系统账号</span>'}
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+        
+        // 筛选用户
+        function filterUsers() {
+            renderUserTable();
+        }
+        
+        // 打开发添加用户弹窗
+        function openAddUserModal() {
+            document.getElementById('userModalTitle').textContent = '添加用户';
+            document.getElementById('userName').value = '';
+            document.getElementById('userStudentId').value = '';
+            document.getElementById('userPassword').value = '';
+            document.getElementById('userRole').value = '';
+            document.getElementById('addUserModal').style.display = 'flex';
+        }
+        
+        // 关闭添加用户弹窗
+        function closeAddUserModal() {
+            document.getElementById('addUserModal').style.display = 'none';
+        }
+        
+        // 处理添加用户表单提交
+        document.getElementById('addUserForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('userName').value.trim();
+            const username = document.getElementById('userStudentId').value.trim();
+            const password = document.getElementById('userPassword').value.trim();
+            const role = document.getElementById('userRole').value;
+            
+            if (!name || !username || !password || !role) {
+                alert('请填写完整信息');
+                return;
+            }
+            
+            if (password.length < 6) {
+                alert('密码至少需要6位');
+                return;
+            }
+            
+            // 检查学号是否已存在
+            if (users.some(u => u.username === username)) {
+                alert('该学号已存在');
+                return;
+            }
+            
+            users.push({
+                id: nextUserId++,
+                name: name,
+                username: username,
+                password: password,
+                role: role,
+                team: '',
+                createTime: new Date().toISOString().split('T')[0],
+                status: '正常'
+            });
+            
+            renderUserTable();
+            closeAddUserModal();
+            alert('用户添加成功！');
+        });
+        
+        // 删除用户
+        function deleteUser(id) {
+            if (id === 1) {
+                alert('不能删除系统管理员');
+                return;
+            }
+            if (confirm('确定要删除该用户吗？')) {
+                users = users.filter(u => u.id !== id);
+                renderUserTable();
+                alert('删除成功！');
+            }
+        }
+        
+        // 点击弹窗背景关闭
+        document.getElementById('addUserModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeAddUserModal();
+            }
+        });
+        
+        // 页面加载时检查是否已登录
+        window.addEventListener('DOMContentLoaded', function() {
+            // 如果需要自动登录可以在这里设置
+            // showPage('login');
+        });
+        
+        // 重写showPage函数以支持登录检查
+        function showPage(pageId) {
+            // 隐藏所有页面
+            document.querySelectorAll('.page-content').forEach(p => p.style.display = 'none');
+            
+            // 显示目标页面
+            const targetPage = document.getElementById(pageId);
+            if (targetPage) {
+                targetPage.style.display = 'block';
+            }
+            
+            // 更新标签页高亮
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            const activeTab = document.querySelector(`.tab[onclick="showPage('${pageId}')"]`);
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
+            
+            // 如果切换到用户管理页面
+            if (pageId === 'users') {
+                if (!checkLogin()) return;
+                if (currentUser.role !== 'admin') {
+                    alert('只有管理员才能访问用户管理');
+                    showPage('dashboard');
+                    return;
+                }
+                document.getElementById('currentUserName2').textContent = currentUser.name;
+                document.getElementById('currentUserRole2').textContent = currentUser.role === 'admin' ? '管理员' : '普通用户';
+                renderSidebarMenus(true, 'sidebarMenu2');
+                renderUserTable();
+            }
+            
+            // 如果切换到需要登录的页面
+            if (['dashboard', 'members', 'teams', 'activities', 'duty', 'messages'].includes(pageId)) {
+                if (!checkLogin()) return;
+                
+                // 权限检查：普通用户不能访问成员管理页面
+                if (currentUser.role !== 'admin' && pageId === 'members') {
+                    alert('您没有权限访问该页面');
+                    showPage('dashboard');
+                    return;
+                }
+                
+                // 更新header
+                document.getElementById('currentUserName').textContent = currentUser.name;
+                document.getElementById('currentUserRole').textContent = currentUser.role === 'admin' ? '管理员' : '普通用户';
+                
+                // 更新侧边栏
+                renderSidebarMenus(currentUser.role === 'admin', 'sidebarMenu');
+                
+                // Dashboard特殊处理：根据角色显示不同内容
+                if (pageId === 'dashboard') {
+                    document.getElementById('welcomeUserName').textContent = currentUser.name;
+                    if (currentUser.role === 'admin') {
+                        document.getElementById('adminStats').style.display = 'grid';
+                        document.getElementById('userStats').style.display = 'none';
+                        document.getElementById('adminQuickActions').style.display = 'block';
+                        document.getElementById('userQuickActions').style.display = 'none';
+                    } else {
+                        document.getElementById('adminStats').style.display = 'none';
+                        document.getElementById('userStats').style.display = 'grid';
+                        document.getElementById('adminQuickActions').style.display = 'none';
+                        document.getElementById('userQuickActions').style.display = 'block';
+                    }
+                }
+                
+                // 服务队页面：普通用户看不到成员数量和详情
+                if (pageId === 'teams') {
+                    const teams = ['爱心家园', '绿色环保', '文化之旅', '安全使者'];
+                    if (currentUser.role === 'admin') {
+                        teams.forEach(team => {
+                            document.getElementById('teamCountDisplay' + team).textContent = '成员：' + members.filter(m => m.team === team).length + '人';
+                            document.getElementById('teamCountDisplay' + team).style.display = 'block';
+                            document.getElementById('teamClickTip' + team).style.display = 'block';
+                            document.getElementById('teamCard' + team).style.cursor = 'pointer';
+                            document.getElementById('teamCard' + team).onclick = () => showTeamMembers(team);
+                        });
+                    } else {
+                        teams.forEach(team => {
+                            document.getElementById('teamCountDisplay' + team).textContent = '成员数量：公开';
+                            document.getElementById('teamCountDisplay' + team).style.display = 'block';
+                            document.getElementById('teamClickTip' + team).style.display = 'none';
+                            document.getElementById('teamCard' + team).style.cursor = 'default';
+                            document.getElementById('teamCard' + team).onclick = null;
+                        });
+                    }
+                }
+                
+                // 值班安排页面：普通用户只能看到自己的值班
+                if (pageId === 'duty') {
+                    renderDutyTable();
+                    if (currentUser.role !== 'admin') {
+                        // 隐藏安排值班按钮，标题改为"我的值班"
+                        const addDutyBtn = document.getElementById('addDutyBtn');
+                        if (addDutyBtn) {
+                            addDutyBtn.style.display = 'none';
+                        }
+                        const titleEl = document.querySelector('#duty .page-title');
+                        if (titleEl) {
+                            titleEl.textContent = '我的值班';
+                        }
+                    } else {
+                        const addDutyBtn = document.getElementById('addDutyBtn');
+                        if (addDutyBtn) {
+                            addDutyBtn.style.display = 'block';
+                        }
+                        const titleEl = document.querySelector('#duty .page-title');
+                        if (titleEl) {
+                            titleEl.textContent = '值班安排';
+                        }
+                    }
+                }
+                
+                // 消息中心：普通用户不能发送通知
+                if (pageId === 'messages') {
+                    renderMessages();
+                    const pageHeader = document.querySelector('#messages .page-header');
+                    if (pageHeader && currentUser.role !== 'admin') {
+                        pageHeader.innerHTML = '<h2 class="page-title">消息中心</h2><button onclick="markAllAsRead()" style="padding:8px 16px;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;">全部已读</button>';
+                    }
+                }
+                
+                // 渲染对应页面的数据
+                if (pageId === 'members') {
+                    renderMemberTable();
+                }
+                if (pageId === 'activities') {
+                    renderActivitiesList();
+                }
+                if (pageId === 'duty') {
+                    renderDutyTable();
+                }
+                if (pageId === 'messages') {
+                    renderMessages();
+                }
+            }
+        }
+    </script>
+</body>
+</html>
