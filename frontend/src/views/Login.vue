@@ -35,7 +35,7 @@
         </el-form-item>
         
         <div class="tips">
-          <span>默认密码：123456</span>
+          <span>管理员账号：admin / admin123</span>
         </div>
       </el-form>
     </div>

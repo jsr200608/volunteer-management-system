@@ -24,6 +24,11 @@ export function removeUser() {
   localStorage.removeItem('user')
 }
 
+export function getRole() {
+  const user = getUser()
+  return user ? user.role : null
+}
+
 export function logout() {
   removeToken()
   removeUser()
